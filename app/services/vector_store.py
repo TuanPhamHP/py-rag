@@ -7,7 +7,7 @@ import tiktoken
 
 load_dotenv()
 
-CHROMA_DB_PATH = "db/chromadb_store"
+CHROMA_DB_PATH = os.path.abspath("./app/db/chromadb_store")
 COLLECTION_NAME = "documents"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -29,6 +29,8 @@ def split_text(text, model="text-embedding-ada-002", max_tokens=8000):
     
     return chunks
 
+
+
 def save_documents_to_chroma():
     """Đọc toàn bộ file và lưu vào ChromaDB"""
     documents = load_all_files()
@@ -45,6 +47,10 @@ def save_documents_to_chroma():
             ids.append(chunk_id)
             processed_contents.append(chunk)
             processed_metadata.append({"filename": doc["id"], "chunk_index": i})
+            print("📌 Debug: Dữ liệu chuẩn bị lưu vào ChromaDB")
+            print("IDs:", ids[:i])  # In 5 phần tử đầu tiên
+            print("Contents:", processed_contents[:i])
+            print("Metadatas:", processed_metadata[:i])
 
     # Kiểm tra số lượng phần tử trước khi thêm vào ChromaDB
     if not (len(ids) == len(processed_contents) == len(processed_metadata)):
@@ -52,13 +58,10 @@ def save_documents_to_chroma():
         return
 
      # Debug xem dữ liệu có được tạo không
-    print("📌 Debug: Dữ liệu chuẩn bị lưu vào ChromaDB")
-    print("IDs:", ids[:5])  # In 5 phần tử đầu tiên
-    print("Contents:", processed_contents[:5])
-    print("Metadatas:", processed_metadata[:5])
+ 
 
     try:
-        # collection.add(ids=ids, documents=processed_contents, metadatas=processed_metadata)
+        collection.add(ids=ids, documents=processed_contents, metadatas=processed_metadata)
         print(f"✅ Đã lưu {len(processed_contents)} đoạn văn bản vào ChromaDB.")
     except Exception as e:
         print(f"❌ Lỗi khi lưu vào ChromaDB: {e}")

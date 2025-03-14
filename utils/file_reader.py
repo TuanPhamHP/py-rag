@@ -5,8 +5,9 @@ import chromadb
 from PyPDF2 import PdfReader
 from docx import Document
 from typing import List
-import fitz
-
+import fitz  # PyMuPDF
+from PIL import Image
+import pytesseract
 
 # Định nghĩa đường dẫn thư mục lưu file
 UPLOAD_DIR = "uploaded_files"
@@ -16,33 +17,40 @@ CHROMADB_PATH = "app/db/chromadb_store"
 chroma_client = chromadb.PersistentClient(path=CHROMADB_PATH)
 chroma_collection = chroma_client.get_or_create_collection(name="document_embeddings")
 
+# Cấu hình đường dẫn tới Tesseract (nếu cần thiết)
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # lấy từ which tesseract(Linux|Unbutu) hoặc where teseract(Windows)
+
 def read_pdf(file_path: str) -> str:
     """Đọc nội dung từ file PDF."""
     doc = fitz.open(file_path)
     text = ""
-
-    for page in doc:
+    
+    # Đọc văn bản từ các trang PDF
+    for page_num in range(len(doc)):
+        page = doc.load_page(page_num)
         text += page.get_text("text") + "\n"
+        
+        # Nếu không có văn bản, thử nhận diện văn bản từ hình ảnh (OCR)
+        if not text.strip():  # Nếu không có văn bản, sử dụng OCR
+            pix = page.get_pixmap()  # Chuyển trang PDF thành hình ảnh
+            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            text += pytesseract.image_to_string(img)  # Sử dụng OCR để nhận diện văn bản từ hình ảnh
 
     return text
-
 
 def read_docx(file_path: str) -> str:
     doc = Document(file_path)
     text = "\n".join([para.text for para in doc.paragraphs])
     return text.strip()
 
-
 def read_json(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
     return json.dumps(data, indent=2)
 
-
 def read_csv(file_path: str) -> str:
     df = pd.read_csv(file_path)
     return df.to_csv(index=False)
-
 
 def read_file(file_path: str) -> str:
     """
@@ -85,7 +93,7 @@ def process_and_store_file(filename: str):
             "content": text,
             "metadata": {"filename": filename}
         }]
-        add_to_chroma_db(document)
+        add_to_chromadb(document)
         print(f"✅ Đã lưu thành công file: {filename} vào ChromaDB")
     except Exception as e:
         print(f"❌ Lỗi khi xử lý {filename}: {e}")
