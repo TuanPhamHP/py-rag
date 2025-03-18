@@ -106,5 +106,9 @@ def load_all_files() -> List[dict]:
         file_path = os.path.join(UPLOAD_DIR, filename)
         content = read_file(file_path)
         if content:  # Nếu file đọc thành công
-            documents.append({"id": filename, "content": content})
+            documents.append({
+                "id": filename, 
+                "content": content,
+                "file_path": file_path
+                })
     return documents

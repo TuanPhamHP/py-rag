@@ -1,14 +1,8 @@
 from fastapi import APIRouter
-from app.services.vector_store import process_and_store, search_query
+from app.api.search import router as search_router
+from app.api.documents import router as documents_router
 
 router = APIRouter()
 
-@router.post("/upload/")
-async def upload_file(text: str):
-    message = process_and_store(text)
-    return {"message": message}
-
-@router.get("/search/")
-async def search(query: str):
-    results = search_query(query)
-    return {"query": query, "results": results}
+router.include_router(search_router, prefix="/search", tags=["search"])
+router.include_router(documents_router, prefix="/documents", tags=["documents"])
