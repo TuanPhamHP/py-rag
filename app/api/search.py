@@ -8,13 +8,14 @@ from app.services.search import search_documents
 router = APIRouter()
 
 
+
 @router.get("/")
 async def search(q: str = Query(..., min_length=1)):
     try:
         query_embedding = generate_embedding(q)
         results = collection.query(
             query_embeddings=[query_embedding],
-            n_results=5,
+            n_results=15,
             include=["documents", "metadatas"]
         )
 

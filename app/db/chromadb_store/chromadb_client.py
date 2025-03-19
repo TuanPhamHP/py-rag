@@ -29,7 +29,7 @@ def add_document(id: str, text: str, metadata: dict = {}):
         embeddings=[embedding]
     )
 
-def search(query: str, top_k: int = 3):
+def search(query: str, top_k: int = 15):
     """Tìm kiếm dữ liệu dựa trên vector"""
     results = collection.query(
         query_texts=[query],
