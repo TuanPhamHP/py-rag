@@ -8,6 +8,8 @@ from typing import List
 import fitz  # PyMuPDF
 from PIL import Image
 import pytesseract
+import pdfplumber
+import subprocess
 
 # Định nghĩa đường dẫn thư mục lưu file
 UPLOAD_DIR = "uploaded_files"
@@ -21,23 +23,45 @@ chroma_collection = chroma_client.get_or_create_collection(name="document_embedd
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"  # lấy từ which tesseract(Linux|Unbutu) hoặc where teseract(Windows)
 
 def read_pdf(file_path: str) -> str:
-    """Đọc nội dung từ file PDF."""
-    doc = fitz.open(file_path)
+    """Đọc nội dung từ file PDF, xử lý lỗi font."""
     text = ""
     
-    # Đọc văn bản từ các trang PDF
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        text += page.get_text("text") + "\n"
-        
-        # Nếu không có văn bản, thử nhận diện văn bản từ hình ảnh (OCR)
-        if not text.strip():  # Nếu không có văn bản, sử dụng OCR
-            pix = page.get_pixmap()  # Chuyển trang PDF thành hình ảnh
-            img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-            text += pytesseract.image_to_string(img)  # Sử dụng OCR để nhận diện văn bản từ hình ảnh
+    # Phương án 1: Dùng pdfplumber
+    try:
+        with pdfplumber.open(file_path) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+    except Exception as e:
+        print(f"pdfplumber failed for {file_path}: {e}")
 
-    return text
+    # Nếu pdfplumber không đọc được hoặc đọc sai, thử fitz
+    if not text.strip():
+        try:
+            doc = fitz.open(file_path)
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                page_text = page.get_text("text")
+                if page_text:
+                    text += page_text + "\n"
+                # Nếu không có văn bản, dùng OCR
+                if not page_text.strip():
+                    pix = page.get_pixmap()
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    text += pytesseract.image_to_string(img, lang="vie") + "\n"  # Chỉ định ngôn ngữ tiếng Việt
+        except Exception as e:
+            print(f"fitz failed for {file_path}: {e}")
 
+    # Nếu vẫn không ổn, dùng pdftotext
+    if not text.strip() or "Cao Léc" in text:  # Kiểm tra lỗi font điển hình
+        try:
+            result = subprocess.run(['pdftotext', '-layout', file_path, '-'], capture_output=True, text=True)
+            text = result.stdout
+        except Exception as e:
+            print(f"pdftotext failed for {file_path}: {e}")
+
+    return text.strip() if text else "Error: Could not extract text"
 def read_docx(file_path: str) -> str:
     doc = Document(file_path)
     text = "\n".join([para.text for para in doc.paragraphs])
@@ -104,11 +128,23 @@ def load_all_files() -> List[dict]:
     documents = []
     for filename in os.listdir(UPLOAD_DIR):
         file_path = os.path.join(UPLOAD_DIR, filename)
-        content = read_file(file_path)
-        if content:  # Nếu file đọc thành công
-            documents.append({
-                "id": filename, 
-                "content": content,
-                "file_path": file_path
+        # content = read_file(file_path)
+        # if content:  # Nếu file đọc thành công
+        #     documents.append({
+        #         "id": filename, 
+        #         "content": content,
+        #         "file_path": file_path
+        #         })
+        try:
+            content = read_file(file_path)
+            if content and "Error" not in content:
+                documents.append({
+                    "id": filename,
+                    "content": content,
+                    "file_path": file_path
                 })
+            else:
+                print(f"Skipped {filename}: Failed to extract content")
+        except Exception as e:
+            print(f"Error processing {filename}: {e}")
     return documents
