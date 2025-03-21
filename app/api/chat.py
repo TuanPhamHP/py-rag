@@ -5,8 +5,7 @@ import os
 from dotenv import load_dotenv
 from app.services.search import retrieve_context
 from utils.normalize import normalize_relevant_docs_scripts
-from app.db.chat_history import create_session, add_message, get_user_sessions, get_session_messages
-from app.auth.jwt_auth import get_current_user
+
 
 load_dotenv()
 
@@ -55,46 +54,31 @@ def generate_prompt(question: str, context: str = "") -> str:
     return base_prompt + f"\n\n**Câu hỏi:** {question}"
 
 @router.post("/")
-async def chat_with_gpt(request: Request, user_id: str = Depends(get_current_user)):
+async def chat_with_gpt(request: Request):
     data = await request.json()
     list_msg = data.get("listMsg", [])
     
     if not list_msg:
         return {"error": "listMsg is required"}
     
-    # Lấy hoặc tạo session_id
-    session_id = data.get("session_id")
-    if not session_id:
-        session_id = await create_session(user_id)
-    
     # Lấy ngữ cảnh trước đó và câu hỏi hiện tại
     other_context = list_msg[:-1] if len(list_msg) > 1 else []
     user_question = list_msg[-1]["content"]
     
-    # Lưu câu hỏi của người dùng
-    await add_message(session_id, "user", user_question)
-    
     # Xử lý RAG và tạo prompt
     use_rag = await should_use_rag(user_question)
-    retrieved_docs = await retrieve_context(user_question) if use_rag else []
-    retrieved_context = normalize_relevant_docs_scripts(retrieved_docs)
-    print(f"Số tài liệu liên quan: {len(retrieved_context)}")
+    retrieved_context = ""
+    if use_rag:
+        retrieved_docs = await retrieve_context(user_question)
+        retrieved_context = normalize_relevant_docs_scripts(retrieved_docs)
+        print(f"Số tài liệu liên quan: {len(retrieved_context)}")
+    else:
+        print("Không dùng RAG, trả lời dựa trên kiến thức chung.")
+
     prompt = generate_prompt(user_question, retrieved_context)
     
-    # Tạo streaming response và lưu câu trả lời
-    async def stream_and_save():
-        full_response = ""
-        async for chunk in generate(prompt, other_context):
-            full_response += chunk
-            yield chunk
-        await add_message(session_id, "assistant", full_response)
-    
-    return StreamingResponse(stream_and_save(), media_type="text/event-stream")
+    return StreamingResponse(generate(prompt, other_context), media_type="text/event-stream")
 
-@router.get("/sessions")
-async def get_sessions(user_id: str = Depends(get_current_user)):
-    return await get_user_sessions(user_id)
 
-@router.get("/messages/{session_id}")
-async def get_messages(session_id: int, user_id: str = Depends(get_current_user)):
-    return await get_session_messages(session_id)
+
+

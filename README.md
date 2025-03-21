@@ -7,7 +7,12 @@ PYTHON: 3.11
 
 OCR - Tesseract
 
+## DATABASE
+```bash
 ChromaDB: ^0.6.0
+PostgreSQL
+```
+
 ## Run Locally
 Cài dependencies
 
@@ -27,6 +32,14 @@ Chạy file main
 ```bash
   python main.py
 ```
+
+
+Khởi tạo DB
+
+```bash
+  python -m app.db.chat_history
+```
+
 ## Commands
 Các command nhanh để test Local (CRUD):
 

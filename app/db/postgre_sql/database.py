@@ -1,18 +1,23 @@
-# app/db/database.py
-import chromadb
+# app/db/postgre_sql/database.py
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
-# ChromaDB setup (giả định từ code hiện tại của bạn)
-chroma_client = chromadb.Client()
-chroma_collection = chroma_client.create_collection("rag_collection")  # Ví dụ, tùy theo code của bạn
+# Load biến môi trường từ file .env
+load_dotenv()
 
-# PostgreSQL setup
-DATABASE_URL = "postgresql://chatbot_user:your_password@localhost:5432/chatbot_db"
-pg_engine = create_engine(DATABASE_URL)
-PgSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=pg_engine)
+# Lấy thông tin từ .env
+DB_NAME = os.getenv("DB_NAME")
+DB_USERNAME = os.getenv("DB_USERNAME")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
+# Tạo URL kết nối PostgreSQL
+DATABASE_URL = f"postgresql://{DB_USERNAME}:{DB_PASSWORD}@localhost:5432/{DB_NAME}"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
@@ -40,16 +45,12 @@ class Message(Base):
     session = relationship("Session", back_populates="messages")
 
 # Tạo bảng trong PostgreSQL
-Base.metadata.create_all(bind=pg_engine)
+Base.metadata.create_all(bind=engine)
 
-# Hàm để lấy session database cho PostgreSQL
-def get_pg_db():
-    db = PgSessionLocal()
+# Hàm để lấy session database
+def get_db():
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-# Hàm để lấy ChromaDB collection (giả định từ code của bạn)
-def get_chroma_collection():
-    return chroma_collection
