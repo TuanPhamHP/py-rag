@@ -9,21 +9,28 @@ ENV PYTHONUNBUFFERED=1
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libtesseract-dev \
-    poppler-utils \       # Cho pdf2image
-    libpq-dev \           # Cho psycopg2
-    gcc \                 # Compiler cho một số thư viện
+    tesseract-ocr-vie \
+    poppler-utils \
+    libpq-dev \
+    gcc \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Tạo thư mục làm việc
 WORKDIR /app
 
-# Copy và cài đặt requirements
-COPY app/requirements.txt .
+# Copy requirements.txt từ thư mục gốc
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy toàn bộ code backend
-COPY app/ .
+# Copy main.py từ thư mục gốc
+COPY main.py .
 
+# Copy thư mục app/
+COPY app/ app/
+COPY utils/ utils/
+COPY chroma_db/ chroma_db/
+COPY db/ db/
+COPY routes/ routes/
 # Mở port 8000 cho FastAPI
 EXPOSE 8000
 

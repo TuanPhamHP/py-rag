@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8000:8000'
+    volumes:
+      - chroma-data:/data/chroma
+      - ./app/uploaded_files:/app/uploaded_files
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      - DB_NAME=chat_db
+      - DB_USER=postgres
+      - DB_PASSWORD=your_secure_password
+      - DB_HOST=db
+      - DB_PORT=5432
+      - OPENAI_API_KEY=your_openai_api_key
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+          cpus: '0.5'
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=chat_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_secure_password
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+volumes:
+  chroma-data:
+  pg-data:

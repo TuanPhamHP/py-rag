@@ -13,7 +13,14 @@ ChromaDB: ^0.6.0
 PostgreSQL
 ```
 
-## Run Locally
+# Getting Started
+### #1 - DOCKER
+```bash
+  cp .env.example > .env
+  docker compose up --build
+```
+### Or
+
 Cài dependencies
 
 ```bash
