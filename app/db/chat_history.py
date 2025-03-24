@@ -33,7 +33,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(Integer, ForeignKey("sessions.id"), nullable=False)
-    sender = Column(String, nullable=False)  # "user" hoặc "bot"
+    role = Column(String, nullable=False)  # "user" hoặc "system"
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 

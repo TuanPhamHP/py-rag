@@ -89,7 +89,6 @@ async def retrieve_context(query: str, top_k: int = 3) -> List[RelevantDoc]:
             )
             for chunk, _ in best_chunks
         ]
-        print(best_chunks)
         return relevant_docs
     except Exception as e:
         print(f"Error in retrieve_context: {e}")

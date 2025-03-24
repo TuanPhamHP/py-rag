@@ -14,10 +14,10 @@ services:
       - .env
     environment:
       - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
+      - DB_USER=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
+      - DB_HOST=db
+      - DB_PORT=5432
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     deploy:
       resources:
@@ -26,10 +26,12 @@ services:
           cpus: '0.5'
   db:
     image: postgres:15
+    env_file:
+      - .env
     environment:
-      - POSTGRES_DB=chat_db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=your_secure_password
+      - POSTGRES_DB=chatbot_db
+      - POSTGRES_USER=chatbot_user
+      - POSTGRES_PASSWORD=root
     volumes:
       - pg-data:/var/lib/postgresql/data
     ports:
