@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,Request
 import uvicorn
 from app.api.routes import router
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +11,14 @@ app.add_middleware(
     allow_methods=["*"],  # Cho phép tất cả phương thức (GET, POST, ...)
     allow_headers=["*"],  # Cho phép tất cả headers
 )
+
+# Middleware để sửa scheme thành HTTPS dùng với NGROK
+@app.middleware("http")
+async def add_https_scheme(request: Request, call_next):
+    # Sửa scheme thành https nếu request đến từ ngrok
+    request.scope["scheme"] = "https"
+    response = await call_next(request)
+    return response
 
 # Thêm API endpoints từ router
 app.include_router(router)

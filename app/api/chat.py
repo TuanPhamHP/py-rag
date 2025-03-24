@@ -14,6 +14,7 @@ router = APIRouter()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 openai.api_key = OPENAI_API_KEY
 
+
 client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 RAG_KEYWORDS = ["tài liệu", "nội bộ", "hồ sơ", "báo cáo", "file", "tệp tin"]
@@ -74,7 +75,7 @@ async def chat_with_gpt(request: Request):
         print(f"Số tài liệu liên quan: {len(retrieved_context)}")
     else:
         print("Không dùng RAG, trả lời dựa trên kiến thức chung.")
-
+        
     prompt = generate_prompt(user_question, retrieved_context)
     
     return StreamingResponse(generate(prompt, other_context), media_type="text/event-stream")
