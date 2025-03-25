@@ -7,7 +7,7 @@ services:
       - '8000:8000'
     volumes:
       - chroma-data:/data/chroma
-      - ./app/uploaded_files:/app/uploaded_files
+      - ./uploaded_files:/app/uploaded_files
     depends_on:
       - db
     env_file:

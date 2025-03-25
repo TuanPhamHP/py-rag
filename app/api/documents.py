@@ -5,6 +5,8 @@ import pdfplumber
 from docx import Document
 import os
 
+# Đường dẫn tới thư mục uploaded_files trong container
+UPLOAD_DIR = "/app/uploaded_files"
 router = APIRouter()
 
 @router.post("/add_document/")
@@ -17,8 +19,12 @@ async def add_doc(id: str, text: str):
 @router.get("/download")
 async def download_file(file_path: str):
     """Tải file từ server"""
-    if os.path.exists(file_path):
-        return FileResponse(path=file_path, filename=os.path.basename(file_path), media_type='application/octet-stream')
+
+    file_name = os.path.basename(file_path)
+    full_path = os.path.join(UPLOAD_DIR, file_name)
+
+    if os.path.exists(full_path):
+        return FileResponse(path=full_path, filename=file_name, media_type='application/octet-stream')
     return {"error": "File not found"}
 
 @router.post("/upload/")

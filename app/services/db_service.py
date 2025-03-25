@@ -58,7 +58,7 @@ def get_list_session(db: Session, user_id: str, page: int, limit: int):
     sessions = (
         db.query(SessionModel)
         .filter(SessionModel.user_id == user_id)
-        .order_by(SessionModel.created_at.asc())
+        .order_by(SessionModel.created_at.desc())
         .offset(offset)
         .limit(limit)
         .all()

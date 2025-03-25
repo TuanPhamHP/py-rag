@@ -2,6 +2,10 @@ from app.db.chromadb_store.chromadb_client import chroma_client
 
 from app.db.database import collection
 
+all_docs = collection.get(include=["documents", "metadatas"])
+for doc, meta in zip(all_docs["documents"], all_docs["metadatas"]):
+    print("=============================================")
+    print(f"Filename: {meta['filename']}, Content: {doc[:500]}...")
 # Lấy danh sách collections (trả về list[str])
 # collections = chroma_client.list_collections()
 
@@ -15,8 +19,3 @@ from app.db.database import collection
 #     # print(f"📄 Dữ liệu trong Collection '{col_name}':", docs)
 
 
-
-all_docs = collection.get(include=["documents", "metadatas"])
-for doc, meta in zip(all_docs["documents"], all_docs["metadatas"]):
-    print("=============================================")
-    print(f"Filename: {meta['filename']}, Content: {doc[:500]}...")
